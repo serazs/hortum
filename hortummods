@@ -1,95 +1,67 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST HUMAN TORNADO V12",
-   LoadingTitle = "İnsan Hortumu Hazırlanıyor...",
+   Name = "GHOST TORNADO V13 | FINAL",
+   LoadingTitle = "Sistem Kontrol Ediliyor...",
    LoadingSubtitle = "by serazs"
 })
 
--- DEĞİŞKENLER
 local LP = game.Players.LocalPlayer
 local RS = game:GetService("RunService")
 local tornadoActive = false
 local selectedVictim = ""
-local radius = 15
-local speed = 8
 
--- OYUNCU LİSTESİNİ ALMA
-local function getPlayerNames()
-    local names = {}
-    for _, p in pairs(game.Players:GetPlayers()) do
-        if p ~= LP then
-            table.insert(names, p.Name)
-        end
+-- GÖRÜNMEZ "İTİCİ" PARÇA (Hortumu bu yapacak)
+local SpinPart = Instance.new("Part")
+SpinPart.Name = "SpinPart"
+SpinPart.Size = Vector3.new(5, 5, 5)
+SpinPart.Transparency = 1
+SpinPart.CanCollide = false
+SpinPart.Anchored = false
+ SpinPart.Parent = workspace
+
+local function getPlayers()
+    local p = {}
+    for _, v in pairs(game.Players:GetPlayers()) do
+        if v ~= LP then table.insert(p, v.Name) end
     end
-    return names
+    return p
 end
 
-local Tab = Window:CreateTab("Hortum Kontrol", 4483345998)
+local Tab = Window:CreateTab("Hortum", 4483345998)
 
-Tab:CreateSection("Kurban Seçimi")
-
-local Dropdown = Tab:CreateDropdown({
-   Name = "Hortumun Odaklanacağı Kişi",
-   Options = getPlayerNames(),
+local Drop = Tab:CreateDropdown({
+   Name = "Kurbanı Seç",
+   Options = getPlayers(),
    CurrentOption = "",
-   Flag = "VictimDropdown",
-   Callback = function(Option)
-      selectedVictim = Option
-   end,
+   Callback = function(Option) selectedVictim = Option end,
 })
-
--- LİSTEYİ YENİLEME BUTONU
-Tab:CreateButton({
-   Name = "Oyuncu Listesini Yenile",
-   Callback = function()
-      Dropdown:Refresh(getPlayerNames(), true)
-   end,
-})
-
-Tab:CreateSection("Hortum Ayarları")
 
 Tab:CreateToggle({
-   Name = "İnsan Hortumunu Başlat (FE)",
+   Name = "İnsanları Uçurmaya Başla",
    CurrentValue = false,
-   Callback = function(Value)
-      tornadoActive = Value
+   Callback = function(Value) 
+      tornadoActive = Value 
+      if not Value then SpinPart.Velocity = Vector3.new(0,0,0) end
    end,
 })
 
-Tab:CreateSlider({
-   Name = "Dönüş Hızı",
-   Min = 1,
-   Max = 20,
-   Default = 8,
-   Callback = function(Value) speed = Value end,
-})
-
--- ANA MOTOR: CFRAME IŞINLAMA (SEN ASLA FIRLAMAZSIN)
-RS.Stepped:Connect(function()
+-- ANA DÖNGÜ
+RS.Heartbeat:Connect(function()
     if tornadoActive and selectedVictim ~= "" then
-        local victimPlayer = game.Players:FindFirstChild(selectedVictim)
-        if victimPlayer and victimPlayer.Character and victimPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local centerPos = victimPlayer.Character.HumanoidRootPart.Position
+        local victim = game.Players:FindFirstChild(selectedVictim)
+        if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
+            local vRoot = victim.Character.HumanoidRootPart
             
-            for _, player in pairs(game.Players:GetPlayers()) do
-                -- Kendini ve kurbanı hortumdan muaf tut
-                if player ~= LP and player.Name ~= selectedVictim and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    pcall(function()
-                        local targetHRP = player.Character.HumanoidRootPart
-                        local angle = tick() * speed + (player.UserId * 0.1) -- Herkes farklı noktada döner
-                        
-                        -- Yeni pozisyon hesabı (CFrame ışınlama)
-                        local targetPos = centerPos + Vector3.new(
-                            math.sin(angle) * radius,
-                            math.sin(tick() * 2) * 5 + 10, -- Havada dalgalanma
-                            math.cos(angle) * radius
-                        )
-                        
-                        targetHRP.CFrame = CFrame.new(targetPos, centerPos)
-                    end)
-                end
-            end
+            -- Görünmez parça kurbanın etrafında dönerken başkalarına çarpar
+            local angle = tick() * 15
+            SpinPart.CFrame = vRoot.CFrame * CFrame.new(math.sin(angle) * 10, 0, math.cos(angle) * 10)
+            
+            -- Fiziksel güç uygulayarak "Fling" etkisi yaratır
+            SpinPart.Velocity = Vector3.new(5000, 5000, 5000)
+            SpinPart.RotVelocity = Vector3.new(5000, 5000, 5000)
         end
+    else
+        SpinPart.CFrame = CFrame.new(0, -100, 0) -- Kapalıyken yerin altına at
     end
 end)
