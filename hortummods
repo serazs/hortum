@@ -1,33 +1,34 @@
+-- RAYFIELD UI LIBRARY
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST HUB V6 | TROLL EDITION",
-   LoadingTitle = "ShadowMod Yükleniyor...",
+   Name = "GHOST HORTUM V4 | GLOBAL RANGE",
+   LoadingTitle = "Hortum Modu Hazırlanıyor...",
    LoadingSubtitle = "by serazs",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "GhostHubConfig",
-      FileName = "GhostHub"
+      FolderName = "GhostHortum",
+      FileName = "HortumConfig"
    }
 })
 
--- VARIABLES
+-- VARIABLES (AYARLAR)
 local LP = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local tornadoActive = false
-local tornadoRadius = 15
-local tornadoSpeed = 8
-local tornadoHeight = 5
+local tornadoRadius = 20
+local tornadoSpeed = 12
+local pullRange = 20000 -- Tüm haritayı kapsayan devasa çekim alanı
 
 -- TABS
-local MainTab = Window:CreateTab("Tornado & Physics", 4483345998) -- Icon ID
+local MainTab = Window:CreateTab("Tornado Control", 4483345998)
 
 -- SECTION
-local Section = MainTab:CreateSection("Hortum Kontrolü (FE)")
+MainTab:CreateSection("Hortum Ana Kontrolleri")
 
--- TOGGLE: TORNADO
+-- TOGGLE: HORTUMU AÇ/KAPAT
 MainTab:CreateToggle({
-   Name = "Hortumu Başlat (FE - Herkes Görür)",
+   Name = "Global Hortumu Başlat (FE EVERYONE SEES)",
    CurrentValue = false,
    Flag = "TornadoToggle",
    Callback = function(Value)
@@ -35,57 +36,67 @@ MainTab:CreateToggle({
    end,
 })
 
--- SLIDER: RADIUS
+-- SLIDER: RADIUS (GENİŞLİK)
 MainTab:CreateSlider({
    Name = "Hortum Genişliği",
    Min = 5,
-   Max = 100,
-   Default = 15,
-   Color = Color3.fromRGB(255, 255, 255),
+   Max = 200,
+   Default = 25,
    Increment = 1,
-   ValueName = "Genişlik",
+   ValueName = "Birim",
    Flag = "RadiusSlider",
    Callback = function(Value)
       tornadoRadius = Value
    end,
 })
 
--- BUTTON: REFRESH NETWORK
-MainTab:CreateButton({
-   Name = "Fizikleri Sahiplen (Refresh)",
-   Callback = function()
-      for _, part in pairs(workspace:GetDescendants()) do
-         if part:IsA("BasePart") and not part.Anchored then
-            pcall(function() part:SetNetworkOwner(LP) end)
-         end
-      end
-      Rayfield:Notify({Title = "Başarılı", Content = "Etraftaki eşyaların kontrolü alındı!", Duration = 3})
+-- SLIDER: SPEED (HIZ)
+MainTab:CreateSlider({
+   Name = "Dönüş Hızı",
+   Min = 1,
+   Max = 50,
+   Default = 12,
+   Increment = 1,
+   ValueName = "Hız",
+   Flag = "SpeedSlider",
+   Callback = function(Value)
+      tornadoSpeed = Value
    end,
 })
 
--- TORNADO LOGIC
+-- HORTUM MOTORU (ANA FİZİK DÖNGÜSÜ)
 RunService.Stepped:Connect(function()
     if tornadoActive then
         local char = LP.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local rootPos = char.HumanoidRootPart.Position
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if root then
+            local rootPos = root.Position
             
             for _, part in pairs(workspace:GetDescendants()) do
+                -- Koşul: BasePart olacak, sabitlenmemiş (Anchored: false) olacak, karakterin olmayacak
                 if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(char) then
-                    pcall(function()
-                        -- Dönme açısı hesabı
-                        local angle = tick() * tornadoSpeed + (part.Position.Y * 0.3)
-                        local targetPos = rootPos + Vector3.new(
-                            math.sin(angle) * tornadoRadius,
-                            math.sin(tick() * 1.5) * tornadoHeight + 5,
-                            math.cos(angle) * tornadoRadius
-                        )
-                        
-                        -- Parçayı hareket ettir (Herkes görmesi için Velocity kullanımı)
-                        part.Velocity = (targetPos - part.Position) * 12
-                        -- Parçayı dik tutma efekti
-                        part.RotVelocity = Vector3.new(0, 10, 0)
-                    end)
+                    
+                    -- Mesafe kontrolü (Sınırsız çekim için)
+                    local dist = (part.Position - rootPos).Magnitude
+                    if dist < pullRange then
+                        pcall(function()
+                            -- Parçanın fiziksel sahipliğini (Network Ownership) zorla
+                            part.Velocity = Vector3.new(0, 8, 0) -- Havada asılı tutma
+                            
+                            -- Matematiksel Hortum Yörüngesi (Sin/Cos)
+                            local angle = tick() * tornadoSpeed + (part.Position.Y * 0.4)
+                            local targetPos = rootPos + Vector3.new(
+                                math.sin(angle) * tornadoRadius,
+                                math.sin(tick() * 2) * 12 + 10, -- Yukarı aşağı dalgalanma efekti
+                                math.cos(angle) * tornadoRadius
+                            )
+                            
+                            -- Parçayı hedef noktaya çok hızlı fırlat (Herkes görür)
+                            part.Velocity = (targetPos - part.Position) * 30
+                            part.RotVelocity = Vector3.new(0, 15, 0) -- Kendi etrafında da dönsün
+                        end)
+                    end
                 end
             end
         end
