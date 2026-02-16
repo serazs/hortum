@@ -1,73 +1,89 @@
--- NO-LIBRARY STABLE SHADOW SCRIPT
+-- BOT SPAWNER V1 (EXECUTOR VERSION)
 local LP = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local ghostCopies = {}
-local animTracks = {}
+local botFolder = nil
 
--- BASİT ARAYÜZ
+-- UI OLUŞTURMA
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 200, 0, 150)
-MainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+MainFrame.Size = UDim2.new(0, 200, 0, 120)
+MainFrame.Position = UDim2.new(0.5, -100, 0, 50)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 MainFrame.Active = true
 MainFrame.Draggable = true
 
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "GHOST SAMURAI V3"
+Title.Text = "BOT SPAWNER V1"
 Title.TextColor3 = Color3.new(1, 1, 1)
 Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 
--- GÖLGE OLUŞTURMA
-local function spawnGhost()
+-- BOT SPAWN FONKSİYONU (CLIENT)
+local function spawnBots()
     local char = LP.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        local ghost = Instance.new("Part", workspace)
-        ghost.Size = Vector3.new(4, 6, 1)
-        ghost.Color = Color3.new(0, 0, 0)
-        ghost.Transparency = 0.5
-        ghost.CanCollide = false
-        ghost.Anchored = true
-        ghost.Material = Enum.Material.Neon
-        table.insert(ghostCopies, ghost)
-        -- Debris kaldırıldı, artık ghost sürekli kalacak
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+
+    if botFolder then botFolder:Destroy() end
+    botFolder = Instance.new("Folder", char)
+    botFolder.Name = "PlayerBots"
+
+    for i = 1, 10 do
+        local bot = Instance.new("Model", botFolder)
+        bot.Name = "Bot_"..i
+
+        local root = Instance.new("Part", bot)
+        root.Name = "HumanoidRootPart"
+        root.Size = Vector3.new(2, 2, 1)
+        root.Anchored = true
+        root.CanCollide = false
+        root.Material = Enum.Material.Neon
+        root.Color = Color3.new(1, 0, 0) -- Kırmızı Botlar
+
+        local hum = Instance.new("Humanoid", bot)
+
+        local billboard = Instance.new("BillboardGui", root)
+        billboard.Size = UDim2.new(0, 100, 0, 50)
+        billboard.AlwaysOnTop = true
+        billboard.Adornee = root
+        billboard.ExtentsOffset = Vector3.new(0, 3, 0)
+
+        local textLabel = Instance.new("TextLabel", billboard)
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.Text = "Help me!"
+        textLabel.TextColor3 = Color3.new(1, 1, 1)
+        textLabel.TextScaled = true
+
+        -- Takip Döngüsü
+        task.spawn(function()
+            while bot.Parent and char:FindFirstChild("HumanoidRootPart") do
+                local offset = Vector3.new(math.sin(tick() + i) * 5, 2, math.cos(tick() + i) * 5)
+                root.CFrame = CFrame.new(char.HumanoidRootPart.Position + offset)
+                task.wait(0.01)
+            end
+        end)
     end
 end
 
--- BUTONLAR
+-- BUTON
 local SpawnBtn = Instance.new("TextButton", MainFrame)
 SpawnBtn.Size = UDim2.new(0, 180, 0, 40)
 SpawnBtn.Position = UDim2.new(0, 10, 0, 40)
-SpawnBtn.Text = "Gölge Ordusu (Spawn)"
+SpawnBtn.Text = "Botları Etrafıma Topla"
+SpawnBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+SpawnBtn.TextColor3 = Color3.new(1, 1, 1)
+
 SpawnBtn.MouseButton1Click:Connect(function()
-    for i = 1, 10 do spawnGhost() end
+    spawnBots()
 end)
 
-local AnimBtn = Instance.new("TextButton", MainFrame)
-AnimBtn.Size = UDim2.new(0, 180, 0, 40)
-AnimBtn.Position = UDim2.new(0, 10, 0, 90)
-AnimBtn.Text = "Samuray Yürüyüşü"
-AnimBtn.MouseButton1Click:Connect(function()
-    local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-    if hum then
-        local anim = Instance.new("Animation")
-        anim.AnimationId = "rbxassetid://657595757"
-        local track = hum:LoadAnimation(anim)
-        track:Play()
-        table.insert(animTracks, track) -- track saklanıyor, tekrar durdurabilirsin
-    end
-end)
+local CleanBtn = Instance.new("TextButton", MainFrame)
+CleanBtn.Size = UDim2.new(0, 180, 0, 30)
+CleanBtn.Position = UDim2.new(0, 10, 0, 85)
+CleanBtn.Text = "Botları Sil"
+CleanBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+CleanBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- TAKİP SİSTEMİ
-RunService.Heartbeat:Connect(function()
-    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        local p = LP.Character.HumanoidRootPart.Position
-        for i, g in pairs(ghostCopies) do
-            if g and g.Parent then
-                local offset = Vector3.new(math.sin(tick()+i)*7, -2, math.cos(tick()+i)*7)
-                g.CFrame = CFrame.new(p + offset)
-            end
-        end
-    end
+CleanBtn.MouseButton1Click:Connect(function()
+    if botFolder then botFolder:Destroy() end
 end)
