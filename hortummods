@@ -1,115 +1,53 @@
--- RAYFIELD UI LIBRARY
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GLOBAL PULL V1 | SERAZS",
-   LoadingTitle = "Pull Modu Hazırlanıyor...",
-   LoadingSubtitle = "by serazs",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "GlobalPull",
-      FileName = "PullConfig"
-   }
+   Name = "GHOST HORTUM V5 | ANTI-BYPASS",
+   LoadingTitle = "Fizik Motoru Zorlanıyor...",
+   LoadingSubtitle = "by serazs"
 })
 
--- VARIABLES
-local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local pullActive = false
-local pullRadius = 25
-local pullSpeed = 15
-local pullRange = 20000 -- haritanın tamamını kapsayan çekim alanı
+local LP = game.Players.LocalPlayer
+local RS = game:GetService("RunService")
+local tornadoActive = false
+local range = 500 -- Çok uzak parçalar yerine orta mesafe (daha stabil)
+local power = 50
 
--- TABS
-local MainTab = Window:CreateTab("Pull Control", 4483345998)
-MainTab:CreateSection("Global Pull Settings")
+local Tab = Window:CreateTab("Force Tornado", 4483345998)
 
--- TOGGLE
-MainTab:CreateToggle({
-   Name = "Global Pull Aç/Kapat",
+Tab:CreateToggle({
+   Name = "Hortumu Zorla (Aggressive)",
    CurrentValue = false,
-   Flag = "PullToggle",
    Callback = function(Value)
-      pullActive = Value
+      tornadoActive = Value
    end,
 })
 
--- SLIDER: Radius
-MainTab:CreateSlider({
-   Name = "Pull Radius",
-   Min = 5,
-   Max = 200,
-   Default = 25,
-   Increment = 1,
-   ValueName = "Birim",
-   Flag = "RadiusSlider",
-   Callback = function(Value)
-      pullRadius = Value
-   end,
-})
-
--- SLIDER: Speed
-MainTab:CreateSlider({
-   Name = "Pull Speed",
-   Min = 1,
-   Max = 50,
-   Default = 15,
-   Increment = 1,
-   ValueName = "Hız",
-   Flag = "SpeedSlider",
-   Callback = function(Value)
-      pullSpeed = Value
-   end,
-})
-
--- Helper: Çekilecek objeleri önceden listele (optimize)
-local function getPullTargets()
-    local targets = {}
-    -- Tüm workspace objelerini listele
-    for _, part in pairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") and not part.Anchored and part ~= LP.Character:FindFirstChild("HumanoidRootPart") then
-            table.insert(targets, part)
-        end
-    end
-    -- Oyuncuların HumanoidRootPart’lerini ekle
-    for _, plr in pairs(Players:GetPlayers()) do
-        local char = plr.Character
-        if char and char:FindFirstChild("HumanoidRootPart") and plr ~= LP then
-            table.insert(targets, char.HumanoidRootPart)
-        end
-    end
-    return targets
-end
-
--- MAIN LOOP
-RunService.Heartbeat:Connect(function()
-    if pullActive then
-        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-
-        local targets = getPullTargets()
-        local rootPos = root.Position
-
-        for _, target in pairs(targets) do
-            local dist = (target.Position - rootPos).Magnitude
-            if dist <= pullRange then
-                -- Hedef pozisyon hesapla (radius içinde dalgalanma efekti)
-                local angle = tick() * pullSpeed + (target.Position.Y * 0.4)
-                local targetPos = rootPos + Vector3.new(
-                    math.sin(angle) * pullRadius,
-                    math.sin(tick()*2) * 5 + 3,
-                    math.cos(angle) * pullRadius
-                )
-
-                -- Yavaşça çek (velocity ile)
-                pcall(function()
-                    target.Velocity = (targetPos - target.Position) * 20
-                    target.RotVelocity = Vector3.new(0,15,0)
-                end)
+-- FİZİK MOTORUNU KANDIRMA DÖNGÜSÜ
+RS.Stepped:Connect(function()
+    if tornadoActive then
+        settings().Physics.AllowSleep = false -- Parçaların uyku moduna geçmesini engelle
+        local char = LP.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if root then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("BasePart") and not v.Anchored and not v:IsDescendantOf(char) then
+                    local dist = (v.Position - root.Position).Magnitude
+                    if dist < range then
+                        -- NETWORK OWNERSHIP ZORLAMA
+                        pcall(function()
+                            v:SetNetworkOwner(LP) -- Parçayı senin kontrolüne alır
+                            
+                            local angle = tick() * 12
+                            local targetPos = root.Position + Vector3.new(math.sin(angle) * 15, 5, math.cos(angle) * 15)
+                            
+                            -- BODY VELOCITY YERİNE DOĞRUDAN VELOCITY ATAMASI
+                            v.Velocity = (targetPos - v.Position).Unit * power
+                            v.RotVelocity = Vector3.new(0, 50, 0)
+                        end)
+                    end
+                end
             end
         end
     end
 end)
-
-Rayfield:LoadConfiguration()
