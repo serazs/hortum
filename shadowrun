@@ -2,8 +2,9 @@
 local LP = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local ghostCopies = {}
+local animTracks = {}
 
--- BASİT ARAYÜZ (KÜTÜPHANESİZ)
+-- BASİT ARAYÜZ
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 200, 0, 150)
@@ -30,7 +31,7 @@ local function spawnGhost()
         ghost.Anchored = true
         ghost.Material = Enum.Material.Neon
         table.insert(ghostCopies, ghost)
-        game:GetService("Debris"):AddItem(ghost, 10)
+        -- Debris kaldırıldı, artık ghost sürekli kalacak
     end
 end
 
@@ -49,9 +50,13 @@ AnimBtn.Position = UDim2.new(0, 10, 0, 90)
 AnimBtn.Text = "Samuray Yürüyüşü"
 AnimBtn.MouseButton1Click:Connect(function()
     local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-    local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://657595757"
-    hum:LoadAnimation(anim):Play()
+    if hum then
+        local anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://657595757"
+        local track = hum:LoadAnimation(anim)
+        track:Play()
+        table.insert(animTracks, track) -- track saklanıyor, tekrar durdurabilirsin
+    end
 end)
 
 -- TAKİP SİSTEMİ
