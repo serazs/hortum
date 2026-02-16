@@ -1,54 +1,60 @@
--- HORTUM ÇEKİM SİSTEMİ (GÜÇLÜ VERSİYON)
-
+-- SETTINGS
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local lp = Players.LocalPlayer
-local char = lp.Character or lp.CharacterAdded:Wait()
-local root = char:WaitForChild("HumanoidRootPart")
+local flingActive = true -- başlangıç açık
 
-local RADIUS = 40        -- çekim mesafesi
-local FORCE = 350        -- hız gücü (arttırdım)
-local UP_FORCE = 120     -- yukarı kaldırma
-local SPIN = 8           -- dönme
-local DURATION = 2       -- etki süresi
+local FORCE = 15000 -- güç (arttırabilirsin)
 
-local function affectPart(part)
-    if not part:IsA("BasePart") then return end
-    if part.Anchored then return end
-    if part:IsDescendantOf(char) then return end
+-- CHARACTER
+local function setupChar(char)
+    local root = char:WaitForChild("HumanoidRootPart")
 
-    local dir = (root.Position - part.Position).Unit
+    local function flingCharacter(otherChar)
+        local hrp = otherChar:FindFirstChild("HumanoidRootPart")
+        local hum = otherChar:FindFirstChildOfClass("Humanoid")
 
-    local bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3.new(1e6,1e6,1e6)
-    bv.Velocity = (dir * FORCE) + Vector3.new(0, UP_FORCE, 0)
-    bv.Parent = part
+        if hrp and hum and hum.Health > 0 then
+            local dir = (hrp.Position - root.Position).Unit
+            local mass = hrp.AssemblyMass
 
-    local bav = Instance.new("BodyAngularVelocity")
-    bav.MaxTorque = Vector3.new(1e6,1e6,1e6)
-    bav.AngularVelocity = Vector3.new(
-        math.random(-SPIN,SPIN),
-        math.random(-SPIN,SPIN),
-        math.random(-SPIN,SPIN)
-    )
-    bav.Parent = part
+            -- aşırı güçlü impulse
+            hrp:ApplyImpulse((dir * FORCE + Vector3.new(0, FORCE/2, 0)) * mass)
 
-    task.delay(DURATION, function()
-        if bv then bv:Destroy() end
-        if bav then bav:Destroy() end
+            -- ekstra hız garantisi
+            hrp.AssemblyLinearVelocity =
+                dir * FORCE/5 + Vector3.new(0, FORCE/6, 0)
+        end
+    end
+
+    root.Touched:Connect(function(hit)
+        if not flingActive then return end
+
+        local model = hit:FindFirstAncestorOfClass("Model")
+        if model and model ~= char then
+            if Players:GetPlayerFromCharacter(model) then
+                flingCharacter(model)
+            end
+        end
     end)
 end
 
-RunService.Heartbeat:Connect(function()
-    if not root or not root.Parent then return end
+-- CHARACTER LOAD
+if lp.Character then
+    setupChar(lp.Character)
+end
 
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and not obj.Anchored then
-            local dist = (obj.Position - root.Position).Magnitude
-            if dist <= RADIUS then
-                affectPart(obj)
-            end
-        end
+lp.CharacterAdded:Connect(setupChar)
+
+-- TOGGLE KEY (F)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+
+    if input.KeyCode == Enum.KeyCode.F then
+        flingActive = not flingActive
+        print("FLING:", flingActive and "AÇIK" or "KAPALI")
     end
 end)
+
+print("Script Loaded | F ile aç/kapat")
