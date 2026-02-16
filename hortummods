@@ -2,43 +2,42 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST HORTUM V4 | GLOBAL RANGE",
-   LoadingTitle = "Hortum Modu Hazırlanıyor...",
+   Name = "GLOBAL PULL V1 | SERAZS",
+   LoadingTitle = "Pull Modu Hazırlanıyor...",
    LoadingSubtitle = "by serazs",
    ConfigurationSaving = {
       Enabled = true,
-      FolderName = "GhostHortum",
-      FileName = "HortumConfig"
+      FolderName = "GlobalPull",
+      FileName = "PullConfig"
    }
 })
 
--- VARIABLES (AYARLAR)
-local LP = game.Players.LocalPlayer
+-- VARIABLES
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local tornadoActive = false
-local tornadoRadius = 20
-local tornadoSpeed = 12
-local pullRange = 20000 -- Tüm haritayı kapsayan devasa çekim alanı
+local pullActive = false
+local pullRadius = 25
+local pullSpeed = 15
+local pullRange = 20000 -- haritanın tamamını kapsayan çekim alanı
 
 -- TABS
-local MainTab = Window:CreateTab("Tornado Control", 4483345998)
+local MainTab = Window:CreateTab("Pull Control", 4483345998)
+MainTab:CreateSection("Global Pull Settings")
 
--- SECTION
-MainTab:CreateSection("Hortum Ana Kontrolleri")
-
--- TOGGLE: HORTUMU AÇ/KAPAT
+-- TOGGLE
 MainTab:CreateToggle({
-   Name = "Global Hortumu Başlat (FE EVERYONE SEES)",
+   Name = "Global Pull Aç/Kapat",
    CurrentValue = false,
-   Flag = "TornadoToggle",
+   Flag = "PullToggle",
    Callback = function(Value)
-      tornadoActive = Value
+      pullActive = Value
    end,
 })
 
--- SLIDER: RADIUS (GENİŞLİK)
+-- SLIDER: Radius
 MainTab:CreateSlider({
-   Name = "Hortum Genişliği",
+   Name = "Pull Radius",
    Min = 5,
    Max = 200,
    Default = 25,
@@ -46,58 +45,68 @@ MainTab:CreateSlider({
    ValueName = "Birim",
    Flag = "RadiusSlider",
    Callback = function(Value)
-      tornadoRadius = Value
+      pullRadius = Value
    end,
 })
 
--- SLIDER: SPEED (HIZ)
+-- SLIDER: Speed
 MainTab:CreateSlider({
-   Name = "Dönüş Hızı",
+   Name = "Pull Speed",
    Min = 1,
    Max = 50,
-   Default = 12,
+   Default = 15,
    Increment = 1,
    ValueName = "Hız",
    Flag = "SpeedSlider",
    Callback = function(Value)
-      tornadoSpeed = Value
+      pullSpeed = Value
    end,
 })
 
--- HORTUM MOTORU (ANA FİZİK DÖNGÜSÜ)
-RunService.Stepped:Connect(function()
-    if tornadoActive then
-        local char = LP.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        
-        if root then
-            local rootPos = root.Position
-            
-            for _, part in pairs(workspace:GetDescendants()) do
-                -- Koşul: BasePart olacak, sabitlenmemiş (Anchored: false) olacak, karakterin olmayacak
-                if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(char) then
-                    
-                    -- Mesafe kontrolü (Sınırsız çekim için)
-                    local dist = (part.Position - rootPos).Magnitude
-                    if dist < pullRange then
-                        pcall(function()
-                            -- Parçanın fiziksel sahipliğini (Network Ownership) zorla
-                            part.Velocity = Vector3.new(0, 8, 0) -- Havada asılı tutma
-                            
-                            -- Matematiksel Hortum Yörüngesi (Sin/Cos)
-                            local angle = tick() * tornadoSpeed + (part.Position.Y * 0.4)
-                            local targetPos = rootPos + Vector3.new(
-                                math.sin(angle) * tornadoRadius,
-                                math.sin(tick() * 2) * 12 + 10, -- Yukarı aşağı dalgalanma efekti
-                                math.cos(angle) * tornadoRadius
-                            )
-                            
-                            -- Parçayı hedef noktaya çok hızlı fırlat (Herkes görür)
-                            part.Velocity = (targetPos - part.Position) * 30
-                            part.RotVelocity = Vector3.new(0, 15, 0) -- Kendi etrafında da dönsün
-                        end)
-                    end
-                end
+-- Helper: Çekilecek objeleri önceden listele (optimize)
+local function getPullTargets()
+    local targets = {}
+    -- Tüm workspace objelerini listele
+    for _, part in pairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and not part.Anchored and part ~= LP.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(targets, part)
+        end
+    end
+    -- Oyuncuların HumanoidRootPart’lerini ekle
+    for _, plr in pairs(Players:GetPlayers()) do
+        local char = plr.Character
+        if char and char:FindFirstChild("HumanoidRootPart") and plr ~= LP then
+            table.insert(targets, char.HumanoidRootPart)
+        end
+    end
+    return targets
+end
+
+-- MAIN LOOP
+RunService.Heartbeat:Connect(function()
+    if pullActive then
+        local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+
+        local targets = getPullTargets()
+        local rootPos = root.Position
+
+        for _, target in pairs(targets) do
+            local dist = (target.Position - rootPos).Magnitude
+            if dist <= pullRange then
+                -- Hedef pozisyon hesapla (radius içinde dalgalanma efekti)
+                local angle = tick() * pullSpeed + (target.Position.Y * 0.4)
+                local targetPos = rootPos + Vector3.new(
+                    math.sin(angle) * pullRadius,
+                    math.sin(tick()*2) * 5 + 3,
+                    math.cos(angle) * pullRadius
+                )
+
+                -- Yavaşça çek (velocity ile)
+                pcall(function()
+                    target.Velocity = (targetPos - target.Position) * 20
+                    target.RotVelocity = Vector3.new(0,15,0)
+                end)
             end
         end
     end
