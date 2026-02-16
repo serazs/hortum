@@ -1,46 +1,76 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST FLING V7 | TOUCH & FLY",
-   LoadingTitle = "Fling Sistemi Hazırlanıyor...",
-   LoadingSubtitle = "by serazs"
+   Name = "GHOST FLING V8 | STABLE PRO",
+   LoadingTitle = "Fizik Motoru Hazırlanıyor...",
+   LoadingSubtitle = "by serazs",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "GhostFling",
+      FileName = "FlingConfig"
+   }
 })
 
+-- DEĞİŞKENLER
 local LP = game.Players.LocalPlayer
 local RS = game:GetService("RunService")
 local flingActive = false
-local power = 50000 -- Fırlatma gücü (Değen uzaya gider)
+local power = 100000 -- Fırlatma gücü (Değen haritadan silinir)
 
+-- GÖRÜNMEZ FLING PARÇASI OLUŞTURMA
+local FlingPart = Instance.new("Part")
+FlingPart.Name = "GhostFlingPart"
+FlingPart.Size = Vector3.new(6, 6, 6) -- Dokunma alanı (biraz genişlettim kanka)
+FlingPart.Transparency = 1 -- Görünmez
+FlingPart.CanCollide = false
+FlingPart.Anchored = false
+FlingPart.Parent = workspace
+
+-- MENÜ SEKMESİ
 local Tab = Window:CreateTab("Fling Modu", 4483345998)
 
+Tab:CreateSection("Ana Kontroller")
+
+-- AÇMA KAPAMA DÜĞMESİ
 Tab:CreateToggle({
-   Name = "Dokunanı Fırlat (Aç/Kapat)",
+   Name = "Fling Modu (Sen Sabit Kalırsın)",
    CurrentValue = false,
+   Flag = "FlingToggle",
    Callback = function(Value)
       flingActive = Value
+      if not Value then
+          -- Kapandığında gücü sıfırla ve parçayı uzağa at
+          FlingPart.Velocity = Vector3.new(0, 0, 0)
+          FlingPart.RotVelocity = Vector3.new(0, 0, 0)
+          FlingPart.CFrame = CFrame.new(0, -500, 0)
+      end
    end,
 })
 
--- FLING MOTORU (FİZİKSEL TEMAS)
-RS.Stepped:Connect(function()
+-- HORTUM/FLING MOTORU (DOKUNMA MANTIĞI)
+RS.Heartbeat:Connect(function()
     if flingActive then
         local char = LP.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         
         if hrp then
-            -- Karakterin iç içe geçip ölmemesi için çarpışmayı kapat
-            for _, v in pairs(char:GetDescendants()) do
+            -- Görünmez parçayı senin gövdenin tam merkezine sabitler
+            FlingPart.CFrame = hrp.CFrame
+            
+            -- SADECE BU PARÇA DELİCE DÖNÜYOR (SEN SABİT KALIRSIN)
+            FlingPart.Velocity = Vector3.new(power, power, power)
+            FlingPart.RotVelocity = Vector3.new(power, power, power)
+            
+            -- Kendi karakterinin parçalara takılmasını engelle
+            for _, v in pairs(char:GetChildren()) do
                 if v:IsA("BasePart") then
                     v.CanCollide = false
+                    v.Velocity = Vector3.new(0, 0, 0) -- Senin hızın 0 kalır!
+                    v.RotVelocity = Vector3.new(0, 0, 0)
                 end
             end
-            
-            -- Sadece HumanoidRootPart'ı delice döndür
-            -- Bu hızla birine değdiğin an oyun motoru onu fırlatır
-            hrp.Velocity = Vector3.new(power, power, power)
-            hrp.RotVelocity = Vector3.new(0, power, 0)
         end
     end
 end)
 
-Rayfield:Notify({Title = "Sistem Hazır", Content = "Birine dokun ve uçuşu izle!", Duration = 5})
+Rayfield:Notify({Title = "Sistem Aktif", Content = "Birine dokun ve onun uçuşunu izle!", Duration = 5})
