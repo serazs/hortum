@@ -1,39 +1,20 @@
---[[ 
-    Super Ring Parts V4 - Cleaned & Optimized 
-    Trol mesajlar silindi, Xeno için hazırlandı.
-]]
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+local Window = Rayfield:CreateWindow({
+   Name = "GHOST RING V4 | RE-MODDED",
+   LoadingTitle = "Fizik Motoru Hazırlanıyor...",
+   LoadingSubtitle = "by serazs",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "GhostRing",
+      FileName = "RingConfig"
+   }
+})
+
+-- DEĞİŞKENLER (Kodun Orijinal Ayarları)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-
--- NETWORK OWNERSHIP BYPASS (Parçaları kontrol etmek için şart)
-if not getgenv().Network then
-    getgenv().Network = {
-        BaseParts = {},
-        Velocity = Vector3.new(14.46, 14.46, 14.46)
-    }
-
-    Network.RetainPart = function(Part)
-        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(Workspace) then
-            table.insert(Network.BaseParts, Part)
-            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            Part.CanCollide = false
-        end
-    end
-
-    RunService.Heartbeat:Connect(function()
-        sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-        for _, Part in pairs(Network.BaseParts) do
-            if Part:IsDescendantOf(Workspace) then
-                Part.Velocity = Network.Velocity
-            end
-        end
-    end)
-end
-
--- AYARLAR
 local radius = 50
 local height = 100
 local rotationSpeed = 1
@@ -41,13 +22,40 @@ local attractionStrength = 1000
 local ringPartsEnabled = false
 local parts = {}
 
--- PARÇA TOPLAMA FONKSİYONU
+-- NETWORK OWNERSHIP (Orijinal Kodun Kalbi)
+if not getgenv().Network then
+    getgenv().Network = {
+        BaseParts = {},
+        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
+    }
+    
+    RunService.Heartbeat:Connect(function()
+        sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+        for _, Part in pairs(getgenv().Network.BaseParts) do
+            if Part:IsDescendantOf(workspace) then
+                Part.Velocity = getgenv().Network.Velocity
+            end
+        end
+    end)
+end
+
+-- PARÇA YÖNETİMİ
+local function RetainPart(Part)
+    if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(workspace) then
+        if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
+            return false
+        end
+        Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+        Part.CanCollide = false
+        return true
+    end
+    return false
+end
+
 local function addPart(part)
-    if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(LocalPlayer.Character) then
+    if RetainPart(part) then
         if not table.find(parts, part) then
             table.insert(parts, part)
-            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            part.CanCollide = false
         end
     end
 end
@@ -55,61 +63,81 @@ end
 for _, part in pairs(workspace:GetDescendants()) do addPart(part) end
 workspace.DescendantAdded:Connect(addPart)
 
--- ARAYÜZ (GUI)
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 220, 0, 150)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -75)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.Draggable = true
-MainFrame.Active = true
+-- ARAYÜZ (RAYFIELD)
+local Tab = Window:CreateTab("Ring Control", 4483345998)
 
-local UICorner = Instance.new("UICorner", MainFrame)
+Tab:CreateSection("Ana Kontroller")
 
-local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "Super Ring V4"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+Tab:CreateToggle({
+   Name = "Hortumu Başlat (Ring Parts)",
+   CurrentValue = false,
+   Flag = "RingToggle",
+   Callback = function(Value)
+      ringPartsEnabled = Value
+   end,
+})
 
-local ToggleBtn = Instance.new("TextButton", MainFrame)
-ToggleBtn.Size = UDim2.new(0.8, 0, 0, 40)
-ToggleBtn.Position = UDim2.new(0.1, 0, 0.35, 0)
-ToggleBtn.Text = "Hortum: KAPALI"
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+Tab:CreateSlider({
+   Name = "Hortum Genişliği (Radius)",
+   Min = 5,
+   Max = 300,
+   Default = 50,
+   Increment = 1,
+   ValueName = "Birim",
+   Callback = function(Value)
+      radius = Value
+   end,
+})
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    ringPartsEnabled = not ringPartsEnabled
-    ToggleBtn.Text = ringPartsEnabled and "Hortum: AÇIK" or "Hortum: KAPALI"
-    ToggleBtn.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-end)
+Tab:CreateSlider({
+   Name = "Dönüş Hızı",
+   Min = 1,
+   Max = 20,
+   Default = 1,
+   Increment = 1,
+   ValueName = "Hız",
+   Callback = function(Value)
+      rotationSpeed = Value
+   end,
+})
 
-local RadiusLabel = Instance.new("TextLabel", MainFrame)
-RadiusLabel.Size = UDim2.new(1, 0, 0, 30)
-RadiusLabel.Position = UDim2.new(0, 0, 0.7, 0)
-RadiusLabel.Text = "Mesafe: " .. radius
-RadiusLabel.TextColor3 = Color3.new(1, 1, 1)
-RadiusLabel.BackgroundTransparency = 1
+Tab:CreateSection("Gelişmiş Ayarlar")
 
--- HORTUM MOTORU
+Tab:CreateSlider({
+   Name = "Çekim Gücü",
+   Min = 100,
+   Max = 5000,
+   Default = 1000,
+   Increment = 50,
+   ValueName = "Güç",
+   Callback = function(Value)
+      attractionStrength = Value
+   end,
+})
+
+-- ANA HORTUM DÖNGÜSÜ (Orijinal Matematik)
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local center = hrp.Position
+
+    local humanoidRootPart = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if humanoidRootPart then
+        local tornadoCenter = humanoidRootPart.Position
         for _, part in pairs(parts) do
             if part.Parent and not part.Anchored then
                 local pos = part.Position
-                local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
+                local distance = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
+                local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
                 local newAngle = angle + math.rad(rotationSpeed)
                 local targetPos = Vector3.new(
-                    center.X + math.cos(newAngle) * radius,
-                    center.Y + (math.sin(tick()) * 5 + 5),
-                    center.Z + math.sin(newAngle) * radius
+                    tornadoCenter.X + math.cos(newAngle) * math.min(radius, distance),
+                    tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height)))),
+                    tornadoCenter.Z + math.sin(newAngle) * math.min(radius, distance)
                 )
-                part.Velocity = (targetPos - part.Position).unit * attractionStrength
+                local directionToTarget = (targetPos - part.Position).unit
+                part.Velocity = directionToTarget * attractionStrength
             end
         end
     end
 end)
+
+Rayfield:Notify({Title = "Hile Yüklendi", Content = "Temiz sürüm hazır. Chat trolü kaldırıldı!", Duration = 5})
