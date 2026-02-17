@@ -341,7 +341,7 @@ end)
 -- Get player thumbnail
 local function getThumbnail()
     local success, userId = pcall(function()
-        return Players:GetUserIdFromNameAsync("Robloxlukasgames")
+        return Players:GetUserIdFromNameAsync("31")
     end)
     
     if success then
