@@ -82,19 +82,17 @@ end
 playSound("2865227271")
 
 --------------------------------------------------
--- GUI (RGB BORDER EKLENDİ)
+-- GUI RGB
 --------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- RGB BORDER FRAME
 local Border = Instance.new("Frame")
 Border.Size = UDim2.new(0,230,0,200)
 Border.Position = UDim2.new(0.5,-115,0.5,-100)
 Border.BorderSizePixel = 0
 Border.Parent = ScreenGui
 
--- İÇ FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(1,-4,1,-4)
 MainFrame.Position = UDim2.new(0,2,0,2)
@@ -102,7 +100,6 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = Border
 
--- RGB LOOP (SADECE GÖRÜNÜŞ)
 task.spawn(function()
     local h = 0
     while true do
@@ -198,7 +195,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --------------------------------------------------
--- RING SYSTEM (AYARLAR AYNI)
+-- RING SYSTEM (GERÇEK DÖNEN HORTUM)
 --------------------------------------------------
 local radius = 50
 local height = 60
@@ -229,19 +226,20 @@ RunService.Heartbeat:Connect(function()
     if not humanoidRootPart then return end
 
     local center = humanoidRootPart.Position
+    local spin = tick() * 3
 
-    for _,part in pairs(parts) do
+    for i,part in pairs(parts) do
         if part.Parent then
-            local pos = part.Position
-            local angle = math.atan2(pos.Z-center.Z,pos.X-center.X)
+
+            local angle = spin + (i * 0.5)
 
             local target = Vector3.new(
-                center.X + math.cos(angle)*radius,
-                center.Y + math.random(-height,height),
-                center.Z + math.sin(angle)*radius
+                center.X + math.cos(angle) * radius,
+                center.Y + math.sin(spin + i) * height,
+                center.Z + math.sin(angle) * radius
             )
 
-            local dir = (target - pos).Unit
+            local dir = (target - part.Position).Unit
             part.Velocity = dir * strength
         end
     end
