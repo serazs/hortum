@@ -372,4 +372,4 @@ local function SendChatMessage(message)
     end
 end
 
-SendChatMessage("Super Ring Parts V4 By lukas")
+SendChatMessage("hi")
