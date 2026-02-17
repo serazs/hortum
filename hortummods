@@ -92,9 +92,11 @@ end
 playSound("2865227271")
 
 --------------------------------------------------
--- GUI (RGB BORDER EKLENDİ)
+-- GUI (RGB BORDER, RESETTE KALICI)
 --------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SuperRingPartsGUI"
+ScreenGui.ResetOnSpawn = false  -- <--- RESETTE KALMASI İÇİN
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- RGB BORDER FRAME
@@ -166,11 +168,11 @@ RadiusDisplay.BackgroundColor3 = Color3.fromRGB(20,20,20)
 RadiusDisplay.TextColor3 = Color3.new(1,1,1)
 RadiusDisplay.Parent = MainFrame
 
--- Watermark
+-- Watermark (SADECE "Super Ring")
 local Watermark = Instance.new("TextLabel")
 Watermark.Size = UDim2.new(1,0,0,20)
 Watermark.Position = UDim2.new(0,0,1,-20)
-Watermark.Text = "Super Ring"
+Watermark.Text = "Super Ring"  -- <--- DEĞİŞTİRİLDİ
 Watermark.TextColor3 = Color3.fromRGB(255,255,255)
 Watermark.BackgroundTransparency = 1
 Watermark.Font = Enum.Font.Gotham
@@ -251,7 +253,9 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Ring Parts Logic
+--------------------------------------------------
+-- RING PARTS LOGIC (AYNEN KALDI)
+--------------------------------------------------
 local radius = 50
 local height = 100
 local rotationSpeed = 1
@@ -338,7 +342,9 @@ IncreaseRadius.MouseButton1Click:Connect(function()
     playSound("12221967")
 end)
 
--- Get player thumbnail
+--------------------------------------------------
+-- BİLDİRİM VE CHAT (AYNEN KALDI)
+--------------------------------------------------
 local function getThumbnail()
     local success, userId = pcall(function()
         return Players:GetUserIdFromNameAsync("31")
@@ -358,7 +364,6 @@ StarterGui:SetCore("SendNotification", {
     Duration = 5
 })
 
--- Chat message
 local function SendChatMessage(message)
     if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
         local textChannel = TextChatService.TextChannels.RBXGeneral
