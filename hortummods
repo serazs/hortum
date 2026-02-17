@@ -32,7 +32,7 @@ end)
 --------------------------------------------------
 local Folder = Instance.new("Folder", Workspace)
 local Part = Instance.new("Part", Folder)
-Instance.new("Attachment", Part)
+local Attachment1 = Instance.new("Attachment", Part)
 
 Part.Anchored = true
 Part.CanCollide = false
@@ -45,7 +45,7 @@ getgenv().Network = {
 
 local Network = getgenv().Network
 
-function Network.RetainPart(part)
+Network.RetainPart = function(part)
     if typeof(part) == "Instance"
     and part:IsA("BasePart")
     and part:IsDescendantOf(Workspace) then
@@ -82,22 +82,25 @@ end
 playSound("2865227271")
 
 --------------------------------------------------
--- GUI
+-- GUI (RGB BORDER EKLENDİ)
 --------------------------------------------------
-local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local Border = Instance.new("Frame", ScreenGui)
+local Border = Instance.new("Frame")
 Border.Size = UDim2.new(0,230,0,200)
 Border.Position = UDim2.new(0.5,-115,0.5,-100)
 Border.BorderSizePixel = 0
+Border.Parent = ScreenGui
 
-local MainFrame = Instance.new("Frame", Border)
+local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(1,-4,1,-4)
 MainFrame.Position = UDim2.new(0,2,0,2)
 MainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 MainFrame.BorderSizePixel = 0
+MainFrame.Parent = Border
 
--- RGB BORDER
+-- RGB BORDER LOOP
 task.spawn(function()
     local h = 0
     while true do
@@ -108,15 +111,16 @@ task.spawn(function()
     end
 end)
 
-local Title = Instance.new("TextLabel", MainFrame)
+local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,0,0,40)
 Title.Text = "Super Ring Parts"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 20
+Title.Parent = MainFrame
 
-local ToggleButton = Instance.new("TextButton", MainFrame)
+local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0.8,0,0,35)
 ToggleButton.Position = UDim2.new(0.1,0,0.3,0)
 ToggleButton.Text = "Ring Parts Off"
@@ -124,27 +128,31 @@ ToggleButton.BackgroundColor3 = Color3.fromRGB(30,30,30)
 ToggleButton.TextColor3 = Color3.new(1,1,1)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 16
+ToggleButton.Parent = MainFrame
 
-local DecreaseRadius = Instance.new("TextButton", MainFrame)
+local DecreaseRadius = Instance.new("TextButton")
 DecreaseRadius.Size = UDim2.new(0.2,0,0,35)
 DecreaseRadius.Position = UDim2.new(0.1,0,0.6,0)
 DecreaseRadius.Text = "<"
 DecreaseRadius.BackgroundColor3 = Color3.fromRGB(30,30,30)
 DecreaseRadius.TextColor3 = Color3.new(1,1,1)
+DecreaseRadius.Parent = MainFrame
 
-local IncreaseRadius = Instance.new("TextButton", MainFrame)
+local IncreaseRadius = Instance.new("TextButton")
 IncreaseRadius.Size = UDim2.new(0.2,0,0,35)
 IncreaseRadius.Position = UDim2.new(0.7,0,0.6,0)
 IncreaseRadius.Text = ">"
 IncreaseRadius.BackgroundColor3 = Color3.fromRGB(30,30,30)
 IncreaseRadius.TextColor3 = Color3.new(1,1,1)
+IncreaseRadius.Parent = MainFrame
 
-local RadiusDisplay = Instance.new("TextLabel", MainFrame)
+local RadiusDisplay = Instance.new("TextLabel")
 RadiusDisplay.Size = UDim2.new(0.4,0,0,35)
 RadiusDisplay.Position = UDim2.new(0.3,0,0.6,0)
 RadiusDisplay.Text = "Radius: 50"
 RadiusDisplay.BackgroundColor3 = Color3.fromRGB(20,20,20)
 RadiusDisplay.TextColor3 = Color3.new(1,1,1)
+RadiusDisplay.Parent = MainFrame
 
 --------------------------------------------------
 -- DRAG
@@ -188,12 +196,13 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --------------------------------------------------
--- RING SYSTEM
+-- RING SYSTEM (AYARLAR AYNI)
 --------------------------------------------------
 local radius = 50
 local height = 60
 local strength = 1500
 local ringEnabled = false
+
 local parts = {}
 
 local function addPart(part)
@@ -213,7 +222,8 @@ end
 Workspace.DescendantAdded:Connect(addPart)
 
 RunService.Heartbeat:Connect(function()
-    if not ringEnabled or not humanoidRootPart then return end
+    if not ringEnabled then return end
+    if not humanoidRootPart then return end
 
     local center = humanoidRootPart.Position
 
@@ -238,9 +248,13 @@ end)
 -- BUTTONS
 --------------------------------------------------
 ToggleButton.MouseButton1Click:Connect(function()
+
     ringEnabled = not ringEnabled
 
-    ToggleButton.Text = ringEnabled and "Ring Parts On" or "Ring Parts Off"
+    ToggleButton.Text =
+        ringEnabled and "Ring Parts On"
+        or "Ring Parts Off"
+
     ToggleButton.BackgroundColor3 =
         ringEnabled and Color3.fromRGB(0,170,0)
         or Color3.fromRGB(30,30,30)
@@ -275,8 +289,8 @@ local function SendChatMessage(msg)
         TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
     else
         game.ReplicatedStorage.DefaultChatSystemChatEvents
-            .SayMessageRequest:FireServer(msg,"All")
+        .SayMessageRequest:FireServer(msg,"All")
     end
 end
 
-SendChatMessage("")
+SendChatMessage("merte pompa")
