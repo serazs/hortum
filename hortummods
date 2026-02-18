@@ -377,4 +377,4 @@ local function SendChatMessage(message)
     end
 end
 
-SendChatMessage("hi")
+SendChatMessage("mert femboy")
